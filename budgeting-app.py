@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 
 class BudgetApp:
@@ -19,21 +20,26 @@ class BudgetApp:
 
 	# Check current balance of an Account
 	def check_balance(self):
-		return f'Current {self.account} Balance: {self.balance}'
+		print(f'Current {self.account} Balance: {self.balance}')
 
 	# Handles all actions pertaining to Adding
+	# Need to consider if there is a need to validate if a transaction already exist before adding
 	def add_transaction(self, date, account, category, sub_category, description, amount):
 
 		# Add category if it does not exist yet
-		if category.capitalize() == 'Income' and category not in self.income_categories:
-			self.income_categories.append(category.capitalize())
+		if category.capitalize() == 'Income':
 			amount = abs(amount)
-		else: 
-			self.expense_categories.append(category.capitalize())
-			amount = -abs(amount)  # We will cast a negative absolute so that users do not have explicitly include the minus sign
+			if category not in self.income_categories:  # Check if category exists. If not, add it in
+				self.income_categories.append(category.capitalize())
+			
+		elif category.capitalize() == 'Expense':
+			amount = -abs(amount)  # We will cast a negative absolute so that users do not have to explicitly include the minus sign
+			if category not in self.expense_categories:
+				self.expense_categories.append(category.capitalize())
+			
 
 		transaction_dict = {
-			'date': date,
+			'date': date,  # Will store as str as date is not JSON serializable
 			'transaction': {
 				'account': account,
 				'category': category,
@@ -44,31 +50,56 @@ class BudgetApp:
 		}
 		self.ledger.append(transaction_dict)
 		self.balance += amount
-		print(json.dumps(self.ledger, indent = 2))
-		return f'Transaction added!\nCurrent Balance: {self.balance}'  # return something to indicate success
+		return f'Transaction added!\nCurrent Balance: {self.balance}'  # Return something to indicate success
 
 	# Handles all actions pertaining to Removing
+	# Use .update()?
 	def remove_transaction(self):
 		pass
 
 	# Handles all actions pertaining to Modifying
+	# Use .pop()?
 	def modify_transaction(self):
 		pass
 
-	# Can consider adding an optional date argument 
-	def list_transaction(self):
-		pass
+	# Return all transactions between a given date range
+	def list_transactions(self, start_date = None, end_date = None):
+		
+		transaction_dates = sorted(list(set([key['date'] for key in self.ledger])), reverse = False)
+
+		# Check if the user provided any date when calling the method
+		if start_date is None:
+			start_date = transaction_dates[0] # We will assign the earliest date if no date is provided
+		if end_date is None:
+			end_date = transaction_dates[-1] # We will assign the latest date if no date is provided
+
+		for count,entry in enumerate(self.ledger):
+			if start_date <= entry.get('date') <= end_date: # chain operation to retrieve relevant transactions
+				date = entry.get('date')
+				account = entry.get('transaction').get('account')
+				category = entry.get('transaction').get('category')
+				sub_category = entry.get('transaction').get('sub_category')
+				description = entry.get('transaction').get('description')
+				amount = entry.get('transaction').get('amount')
+				print(f'Date: {date}')
+				print(f'Account: {account}')
+				print(f'Category: {category}')
+				print(f'Sub_category: {sub_category}')
+				print(f'Description: {description}')
+				print(f'Amount: {amount}\n')
 
 
 # Test section
 acc1 = BudgetApp('Bank', 'This is a sample bank account')
 # acc2 = BudgetApp('Investment', 'This is a sample investment account')
-print(acc1.account)
-print(BudgetApp.check_balance(acc1))
+# print(acc1.account)
+# print(BudgetApp.check_balance(acc1))
 
 BudgetApp.add_transaction(acc1, '2023-01-01', 'Bank', 'Income', 'Salary', 'Salary for the month', 100)
-BudgetApp.add_transaction(acc1, '2023-01-01', 'Bank', 'Expense', 'Food', 'Macs', 10)
+BudgetApp.add_transaction(acc1, '2023-01-02', 'Bank', 'Income', 'Bonus', 'Bonus for good performance', 30)
+BudgetApp.add_transaction(acc1, '2023-01-05', 'Bank', 'Expense', 'Food', 'Macs', 10)
 
-print(BudgetApp.check_balance(acc1))
+BudgetApp.check_balance(acc1)
+BudgetApp.list_transactions(acc1)
 
 
