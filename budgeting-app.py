@@ -1,4 +1,3 @@
-from datetime import datetime
 import json
 
 class BudgetApp:
@@ -22,6 +21,25 @@ class BudgetApp:
 	def check_balance(self):
 		print(f'Current {self.account} Balance: {self.balance}')
 
+	# List all Accounts under the Class
+	@classmethod
+	def list_accounts(cls):
+		return f'Accounts: {", ".join(cls.accounts)}'
+
+	# Returns a unique list for further processing under Instances
+	@staticmethod
+	def return_unique_list(non_unique_list):
+		return list(set(non_unique_list))
+
+	# List existing categories under each Account
+	def list_categories(self, category):
+		if category == 'Income':
+			categories = '\n'.join(sorted(self.return_unique_list(self.income_categories)))
+		else:
+			categories = '\n'.join(sorted(self.return_unique_list(self.expense_categories)))
+
+		return f'{self.account} Acount {category} categories:\n{categories}'
+
 	# Handles all actions pertaining to Adding
 	# Need to consider if there is a need to validate if a transaction already exist before adding
 	def add_transaction(self, date, account, category, sub_category, description, amount):
@@ -29,13 +47,13 @@ class BudgetApp:
 		# Add category if it does not exist yet
 		if category.capitalize() == 'Income':
 			amount = abs(amount)
-			if category not in self.income_categories:  # Check if category exists. If not, add it in
-				self.income_categories.append(category.capitalize())
+			if sub_category not in self.income_categories:  # Check if category exists. If not, add it in
+				self.income_categories.append(sub_category.capitalize())
 			
 		elif category.capitalize() == 'Expense':
 			amount = -abs(amount)  # We will cast a negative absolute so that users do not have to explicitly include the minus sign
-			if category not in self.expense_categories:
-				self.expense_categories.append(category.capitalize())
+			if sub_category not in self.expense_categories:
+				self.expense_categories.append(sub_category.capitalize())
 			
 
 		transaction_dict = {
@@ -74,7 +92,7 @@ class BudgetApp:
 			end_date = transaction_dates[-1] # We will assign the latest date if no date is provided
 
 		for count,entry in enumerate(self.ledger):
-			if start_date <= entry.get('date') <= end_date: # chain operation to retrieve relevant transactions
+			if start_date <= entry.get('date') <= end_date: # chain operation to consider only transaction dates within range
 				date = entry.get('date')
 				account = entry.get('transaction').get('account')
 				category = entry.get('transaction').get('category')
@@ -90,16 +108,19 @@ class BudgetApp:
 
 
 # Test section
+
 acc1 = BudgetApp('Bank', 'This is a sample bank account')
-# acc2 = BudgetApp('Investment', 'This is a sample investment account')
+acc2 = BudgetApp('Investment', 'This is a sample investment account')
 # print(acc1.account)
 # print(BudgetApp.check_balance(acc1))
 
 BudgetApp.add_transaction(acc1, '2023-01-01', 'Bank', 'Income', 'Salary', 'Salary for the month', 100)
 BudgetApp.add_transaction(acc1, '2023-01-02', 'Bank', 'Income', 'Bonus', 'Bonus for good performance', 30)
 BudgetApp.add_transaction(acc1, '2023-01-05', 'Bank', 'Expense', 'Food', 'Macs', 10)
+BudgetApp.add_transaction(acc1, '2023-01-10', 'Bank', 'Expense', 'Transport', 'Bus', 3)
 
+print(BudgetApp.list_accounts())
 BudgetApp.check_balance(acc1)
 BudgetApp.list_transactions(acc1)
-
-
+print(BudgetApp.list_categories(acc1, 'Income'))
+print(BudgetApp.list_categories(acc1, 'Expense'))
