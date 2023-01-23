@@ -33,51 +33,32 @@ class BudgetApp:
 
 	# List existing categories under each Account
 	def list_categories(self, category):
-		if category == 'Income':
+		if category.capitalize() == 'Income':
 			categories = '\n'.join(sorted(self.return_unique_list(self.income_categories)))
 		else:
 			categories = '\n'.join(sorted(self.return_unique_list(self.expense_categories)))
 
-		return f'{self.account} Acount {category} categories:\n{categories}'
+		return f'{self.account.capitalize()} Acount {category.capitalize()} categories:\n{categories}'
 
-	# Handles all actions pertaining to Adding
-	# Need to consider if there is a need to validate if a transaction already exist before adding
-	def add_transaction(self, date, account, category, sub_category, description, amount):
-
-		# Add category if it does not exist yet
+	# Allows adding of a new category to a specified Account
+	def add_sub_category(self, category, sub_category):
 		if category.capitalize() == 'Income':
-			amount = abs(amount)
-			if sub_category not in self.income_categories:  # Check if category exists. If not, add it in
+			if sub_category not in self.income_categories:
 				self.income_categories.append(sub_category.capitalize())
-			
 		elif category.capitalize() == 'Expense':
-			amount = -abs(amount)  # We will cast a negative absolute so that users do not have to explicitly include the minus sign
 			if sub_category not in self.expense_categories:
 				self.expense_categories.append(sub_category.capitalize())
-			
+		
+		return f'"{sub_category.capitalize()}" added to {category.capitalize()} under {self.account.capitalize()} Account'
 
-		transaction_dict = {
-			'date': date,  # Will store as str as date is not JSON serializable
-			'transaction': {
-				'account': account,
-				'category': category,
-				'sub_category': sub_category,
-				'description': description,
-				'amount': amount
-				}
-		}
-		self.ledger.append(transaction_dict)
-		self.balance += amount
-		return f'Transaction added!\nCurrent Balance: {self.balance}'  # Return something to indicate success
 
-	# Handles all actions pertaining to Removing
-	# Use .update()?
-	def remove_transaction(self):
+	# Allows removing of a new category to a specified Account
+	# Also need to remove all transactions under the sub_category
+	def remove_sub_category(self):
 		pass
 
-	# Handles all actions pertaining to Modifying
-	# Use .pop()?
-	def modify_transaction(self):
+	# Allows modifying of a new category to a specified Account
+	def modify_sub_category(self):
 		pass
 
 	# Return all transactions between a given date range
@@ -106,21 +87,66 @@ class BudgetApp:
 				print(f'Description: {description}')
 				print(f'Amount: {amount}\n')
 
+	# Handles all actions pertaining to Adding transaction
+	def add_transaction(self, date, category, sub_category, description, amount):
+
+		# Add category if it does not exist yet
+		if category.capitalize() == 'Income':
+			amount = abs(amount)
+			if sub_category not in self.income_categories:  # Check if category exists. If not, add it in
+				self.income_categories.append(sub_category.capitalize())
+			
+		elif category.capitalize() == 'Expense':
+			amount = -abs(amount)  # We will cast a negative absolute so that users do not have to explicitly include the minus sign
+			if sub_category not in self.expense_categories:
+				self.expense_categories.append(sub_category.capitalize())
+			
+
+		transaction_dict = {
+			'date': date,  # Will store as str as date is not JSON serializable
+			'transaction': {
+				'account': self.account,
+				'category': category,
+				'sub_category': sub_category,
+				'description': description,
+				'amount': amount
+				}
+		}
+		self.ledger.append(transaction_dict)
+		self.balance += amount
+		return f'Transaction added!\nCurrent Balance: {self.balance}'  # Return something to indicate success
+
+	# Handles all actions pertaining to Removing transaction 
+	# Use .pop?
+	def remove_transaction(self):
+		pass
+
+	# Handles all actions pertaining to Modifying transaction
+	# Use .update()?
+	def modify_transaction(self):
+		pass
+
 
 # Test section
 
 acc1 = BudgetApp('Bank', 'This is a sample bank account')
-acc2 = BudgetApp('Investment', 'This is a sample investment account')
+# print(BudgetApp.add_sub_category(acc1, 'income', 'petty cash'))
+# print(BudgetApp.list_categories(acc1, 'Income'))
+
+# acc2 = BudgetApp('Investment', 'This is a sample investment account')
 # print(acc1.account)
 # print(BudgetApp.check_balance(acc1))
 
-BudgetApp.add_transaction(acc1, '2023-01-01', 'Bank', 'Income', 'Salary', 'Salary for the month', 100)
-BudgetApp.add_transaction(acc1, '2023-01-02', 'Bank', 'Income', 'Bonus', 'Bonus for good performance', 30)
-BudgetApp.add_transaction(acc1, '2023-01-05', 'Bank', 'Expense', 'Food', 'Macs', 10)
-BudgetApp.add_transaction(acc1, '2023-01-10', 'Bank', 'Expense', 'Transport', 'Bus', 3)
+BudgetApp.add_transaction(acc1, '2023-01-01', 'Income', 'Salary', 'Salary for the month', 100)
+# BudgetApp.add_transaction(acc1, '2023-01-02', 'Bank', 'Income', 'Bonus', 'Bonus for good performance', 30)
+# BudgetApp.add_transaction(acc1, '2023-01-05', 'Bank', 'Expense', 'Food', 'Macs', 10)
+# BudgetApp.add_transaction(acc1, '2023-01-10', 'Bank', 'Expense', 'Transport', 'Bus', 3)
 
-print(BudgetApp.list_accounts())
-BudgetApp.check_balance(acc1)
+
+# print(BudgetApp.list_accounts())
+# BudgetApp.check_balance(acc1)
 BudgetApp.list_transactions(acc1)
-print(BudgetApp.list_categories(acc1, 'Income'))
-print(BudgetApp.list_categories(acc1, 'Expense'))
+# print(BudgetApp.list_categories(acc1, 'Income'))
+# print(BudgetApp.list_categories(acc1, 'Expense'))
+
+
