@@ -1,4 +1,36 @@
 import json
+import sqlite3 
+
+# Use an in-memory database for prototyping
+conn = sqlite3.connect(':memory:')
+
+c = conn.cursor()
+
+# We will simply create a singular table to govern all transactions instead of attempting to normalise the design for simplicity
+c.execute("""CREATE TABLE transactions (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	date DATE,
+	account TEXT,
+	category TEXT,
+	sub_category TEXT,
+	description TEXT,
+	amount REAL
+	)""")
+
+# Add a line of transaction into DB table
+def insert_transaction(date, account, category, sub_category, amount, description):
+	with conn:
+		c.execute("""INSERT INTO transactions (date, account, category, sub_category, description, amount) VALUES
+		 (:date, :account, :category, :sub_category, :description, :amount)""", 
+		 {
+		 'date': date,
+		 'account': account,
+		 'category': category,
+		 'sub_category': sub_category,
+		 'description': description,
+		 'amount': amount
+		 }
+		 )
 
 class BudgetApp:
 
@@ -88,65 +120,30 @@ class BudgetApp:
 				print(f'Amount: {amount}\n')
 
 	# Handles all actions pertaining to Adding transaction
-	def add_transaction(self, date, category, sub_category, description, amount):
-
-		# Add category if it does not exist yet
-		if category.capitalize() == 'Income':
-			amount = abs(amount)
-			if sub_category not in self.income_categories:  # Check if category exists. If not, add it in
-				self.income_categories.append(sub_category.capitalize())
-			
-		elif category.capitalize() == 'Expense':
-			amount = -abs(amount)  # We will cast a negative absolute so that users do not have to explicitly include the minus sign
-			if sub_category not in self.expense_categories:
-				self.expense_categories.append(sub_category.capitalize())
-			
-
-		transaction_dict = {
-			'date': date,  # Will store as str as date is not JSON serializable
-			'transaction': {
-				'account': self.account,
-				'category': category,
-				'sub_category': sub_category,
-				'description': description,
-				'amount': amount
-				}
-		}
-		self.ledger.append(transaction_dict)
-		self.balance += amount
-		return f'Transaction added!\nCurrent Balance: {self.balance}'  # Return something to indicate success
+	def add_transaction(self, date, category, sub_category, amount, description = None):
+		insert_transaction(
+			date = date,
+			account = self.account,
+			category = category,
+			sub_category = sub_category,
+			amount = amount,
+			description = description
+			)
 
 	# Handles all actions pertaining to Removing transaction 
-	# Use .pop?
 	def remove_transaction(self):
 		pass
 
 	# Handles all actions pertaining to Modifying transaction
-	# Use .update()?
 	def modify_transaction(self):
 		pass
 
 
 # Test section
-
 acc1 = BudgetApp('Bank', 'This is a sample bank account')
-# print(BudgetApp.add_sub_category(acc1, 'income', 'petty cash'))
-# print(BudgetApp.list_categories(acc1, 'Income'))
+BudgetApp.add_transaction(acc1, date = '2023-01-01', category = 'Income', sub_category = 'Salary', amount = 100)
 
-# acc2 = BudgetApp('Investment', 'This is a sample investment account')
-# print(acc1.account)
-# print(BudgetApp.check_balance(acc1))
+c.execute("SELECT * FROM transactions")
+print(c.fetchone())
 
-BudgetApp.add_transaction(acc1, '2023-01-01', 'Income', 'Salary', 'Salary for the month', 100)
-# BudgetApp.add_transaction(acc1, '2023-01-02', 'Bank', 'Income', 'Bonus', 'Bonus for good performance', 30)
-# BudgetApp.add_transaction(acc1, '2023-01-05', 'Bank', 'Expense', 'Food', 'Macs', 10)
-# BudgetApp.add_transaction(acc1, '2023-01-10', 'Bank', 'Expense', 'Transport', 'Bus', 3)
-
-
-# print(BudgetApp.list_accounts())
-# BudgetApp.check_balance(acc1)
-BudgetApp.list_transactions(acc1)
-# print(BudgetApp.list_categories(acc1, 'Income'))
-# print(BudgetApp.list_categories(acc1, 'Expense'))
-
-
+conn.close()
