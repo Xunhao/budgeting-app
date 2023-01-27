@@ -49,9 +49,13 @@ def db_delete_transaction(transaction_id):
 	}
 
 	with conn:
-		c.execute('DELETE FROM transactions WHERE id = :id', parameter)
-
-	print(f'ID {transaction_id} has been deleted successfully!')
+		c.execute('SELECT * FROM transactions WHERE id = :id', parameter)
+		# No need to check for duplicated IDs since it auto increases for each entry
+		if c.fetchone() is not None:
+			c.execute('DELETE FROM transactions WHERE id = :id', parameter)
+			print(f'ID = {transaction_id} has been deleted successfully!')
+		else:
+			print(f'ID = {transaction_id} does not exist in the database')
 
 class BudgetApp:
 
@@ -163,10 +167,10 @@ class BudgetApp:
 # Test section
 acc1 = BudgetApp('Bank', 'This is a sample bank account')
 BudgetApp.insert_transaction(acc1, date = '2023-01-01', category = 'Income', sub_category = 'Salary', amount = 100) # Test insert function
-BudgetApp.delete_transaction(acc1, id = 1) # Test delete function
-BudgetApp.insert_transaction(acc1, date = '2023-01-01', category = 'Income', sub_category = 'Bonus', amount = 30)
+BudgetApp.delete_transaction(acc1, id = 2) # Test delete function
+# BudgetApp.insert_transaction(acc1, date = '2023-01-01', category = 'Income', sub_category = 'Bonus', amount = 30)
 
-c.execute("SELECT * FROM transactions")
-print(c.fetchone())
+# c.execute("SELECT * FROM transactions")
+# print(c.fetchone())
 
 conn.close()
