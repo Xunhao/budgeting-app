@@ -18,11 +18,9 @@ c.execute("""CREATE TABLE transactions (
 	)""")
 
 # Add a line of transaction into DB table
-def insert_transaction(date, account, category, sub_category, amount, description):
-	with conn:
-		c.execute("""INSERT INTO transactions (date, account, category, sub_category, description, amount) VALUES
-		 (:date, :account, :category, :sub_category, :description, :amount)""", 
-		 {
+def db_insert_transaction(date, account, category, sub_category, amount, description):
+
+	parameter = {
 		 'date': date,
 		 'account': account,
 		 'category': category,
@@ -30,7 +28,30 @@ def insert_transaction(date, account, category, sub_category, amount, descriptio
 		 'description': description,
 		 'amount': amount
 		 }
-		 )
+
+	with conn:
+		c.execute("""INSERT INTO transactions (date, account, category, sub_category, description, amount) VALUES
+		 (:date, :account, :category, :sub_category, :description, :amount)""", parameter)
+
+	print(f'The following transaction has been added:')
+	print(f'Date: {date}')
+	print(f'Account: {account}')
+	print(f'Category: {category}')
+	print(f'Sub Category: {sub_category}')
+	print(f'Amount: {amount}')
+	print(f'Description: {description}')
+
+
+def db_delete_transaction(transaction_id):
+
+	parameter = {
+	'id': transaction_id
+	}
+
+	with conn:
+		c.execute('DELETE FROM transactions WHERE id = :id', parameter)
+
+	print(f'ID {transaction_id} has been deleted successfully!')
 
 class BudgetApp:
 
@@ -120,8 +141,8 @@ class BudgetApp:
 				print(f'Amount: {amount}\n')
 
 	# Handles all actions pertaining to Adding transaction
-	def add_transaction(self, date, category, sub_category, amount, description = None):
-		insert_transaction(
+	def insert_transaction(self, date, category, sub_category, amount, description = None):
+		db_insert_transaction(
 			date = date,
 			account = self.account,
 			category = category,
@@ -131,8 +152,8 @@ class BudgetApp:
 			)
 
 	# Handles all actions pertaining to Removing transaction 
-	def remove_transaction(self):
-		pass
+	def delete_transaction(self, id):
+		db_delete_transaction(id)
 
 	# Handles all actions pertaining to Modifying transaction
 	def modify_transaction(self):
@@ -141,7 +162,9 @@ class BudgetApp:
 
 # Test section
 acc1 = BudgetApp('Bank', 'This is a sample bank account')
-BudgetApp.add_transaction(acc1, date = '2023-01-01', category = 'Income', sub_category = 'Salary', amount = 100)
+BudgetApp.insert_transaction(acc1, date = '2023-01-01', category = 'Income', sub_category = 'Salary', amount = 100) # Test insert function
+BudgetApp.delete_transaction(acc1, id = 1) # Test delete function
+BudgetApp.insert_transaction(acc1, date = '2023-01-01', category = 'Income', sub_category = 'Bonus', amount = 30)
 
 c.execute("SELECT * FROM transactions")
 print(c.fetchone())
