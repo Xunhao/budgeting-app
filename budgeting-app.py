@@ -37,20 +37,21 @@ def db_insert_transaction(date, account, category, sub_category, amount, descrip
 		print(json.dumps(dict(row), indent = 1))
 
 
-def db_delete_transaction(transaction_id):
+def db_delete_transaction(account, transaction_id):
 
 	parameter = {
-	'id': transaction_id
+	'id': transaction_id,
+	'account': account
 	}
 
 	with conn:
-		c.execute('SELECT * FROM transactions WHERE id = :id', parameter)
+		entry = c.execute('SELECT * FROM transactions WHERE id = :id AND account = :account', parameter).fetchone()
 		# No need to check for duplicated IDs since it auto increases for each entry
-		if c.fetchone() is not None:
-			c.execute('DELETE FROM transactions WHERE id = :id', parameter)
+		if entry is not None:
+			c.execute('DELETE FROM transactions WHERE id = :id AND account = :account', parameter)
 			print(f'ID = {transaction_id} has been deleted successfully!')
 		else:
-			print(f'ID = {transaction_id} does not exist in the database')
+			print(f'ID = {transaction_id} does not exist in the database!')
 
 def db_update_transaction(account, transaction_id):
 
@@ -99,7 +100,7 @@ def db_update_transaction(account, transaction_id):
 			print(json.dumps(dict(entry), indent = 1))
 
 		else:
-			print(f'ID = {transaction_id} does not exist in the database')
+			print(f'ID = {transaction_id} does not exist in the database!')
 
 class BudgetApp:
 
@@ -171,7 +172,7 @@ class BudgetApp:
 
 	# Handles all actions pertaining to Removing transaction 
 	def delete_transaction(self, id):
-		db_delete_transaction(id)
+		db_delete_transaction(self.account, id)
 
 	# Handles all actions pertaining to Modifying transaction
 	def update_transaction(self, id):
@@ -181,8 +182,8 @@ class BudgetApp:
 # Test section
 acc1 = BudgetApp('Bank', 'This is a sample bank account')
 BudgetApp.insert_transaction(acc1, date = '2023-01-01', category = 'Income', sub_category = 'Salary', amount = 100) # Test insert function
-# BudgetApp.delete_transaction(acc1, id = 2) # Test delete function
-BudgetApp.update_transaction(acc1, 1) # Test update function
+BudgetApp.delete_transaction(acc1, id = 2) # Test delete function
+# BudgetApp.update_transaction(acc1, 1) # Test update function
 # BudgetApp.insert_transaction(acc1, date = '2023-01-01', category = 'Income', sub_category = 'Bonus', amount = 30)
 
 
