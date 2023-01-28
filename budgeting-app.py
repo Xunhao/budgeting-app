@@ -17,7 +17,7 @@ c.execute("""CREATE TABLE transactions (
 	amount REAL
 	)""")
 
-# Add a line of transaction into DB table
+# Add a line into the transaction table
 def db_insert_transaction(date, account, category, sub_category, amount, description):
 
 	parameter = {
@@ -36,7 +36,7 @@ def db_insert_transaction(date, account, category, sub_category, amount, descrip
 		print(f'The following transaction has been added:')
 		print(json.dumps(dict(row), indent = 1))
 
-
+# Remove a line from the transaction table 
 def db_delete_transaction(account, transaction_id):
 
 	parameter = {
@@ -53,6 +53,7 @@ def db_delete_transaction(account, transaction_id):
 		else:
 			print(f'ID = {transaction_id} does not exist in the database!')
 
+# Update a line in the transaction table
 def db_update_transaction(account, transaction_id):
 
 	with conn:
@@ -102,12 +103,15 @@ def db_update_transaction(account, transaction_id):
 		else:
 			print(f'ID = {transaction_id} does not exist in the database!')
 
+# def check_balance(account):
+# 	with conn:
+# 		entry = c.execute('SELECT category, SUM(amount) as total FROM transactions GROUP BY 1').fetchall()
+# 		for i in entry:
+# 			print(json.dumps(dict(i), indent = 1))
+
 class BudgetApp:
 
 	# Class Variables here
-	accounts = [] # Store all Accounts here
-	income_categories = [] # Store all Income catgories here
-	expense_categories = [] # Store all Expense categories here
 
 	# Initialise Account creation and populate it with basic requirements
 	def __init__(self, account, description):
@@ -120,61 +124,30 @@ class BudgetApp:
 		self.accounts.append(self.account)
 
 	# Check current balance of an Account
-	# def check_balance(self):
+	def check_account_balance(self):
+		pass
 	# 	print(f'Current {self.account} Balance: {self.balance}')
 
+	@classmethod
+	def check_overall_balance(cls):
+		pass
 	# List all Accounts under the Class
 	# @classmethod
 	# def list_accounts(cls):
 	# 	return f'Accounts: {", ".join(cls.accounts)}'
 
-	# Returns a unique list for further processing under Instances
-	# @staticmethod
-	# def return_unique_list(non_unique_list):
-	# 	return list(set(non_unique_list))
-
-	# Return all transactions between a given date range
-	# def list_transactions(self, start_date = None, end_date = None):
-		
-		# transaction_dates = sorted(list(set([key['date'] for key in self.ledger])), reverse = False)
-
-		# # Check if the user provided any date when calling the method
-		# if start_date is None:
-		# 	start_date = transaction_dates[0] # We will assign the earliest date if no date is provided
-		# if end_date is None:
-		# 	end_date = transaction_dates[-1] # We will assign the latest date if no date is provided
-
-		# for count,entry in enumerate(self.ledger):
-		# 	if start_date <= entry.get('date') <= end_date: # chain operation to consider only transaction dates within range
-		# 		date = entry.get('date')
-		# 		account = entry.get('transaction').get('account')
-		# 		category = entry.get('transaction').get('category')
-		# 		sub_category = entry.get('transaction').get('sub_category')
-		# 		description = entry.get('transaction').get('description')
-		# 		amount = entry.get('transaction').get('amount')
-		# 		print(f'Date: {date}')
-		# 		print(f'Account: {account}')
-		# 		print(f'Category: {category}')
-		# 		print(f'Sub_category: {sub_category}')
-		# 		print(f'Description: {description}')
-				# print(f'Amount: {amount}\n')
-
-	# Handles all actions pertaining to Adding transaction
+	# Insert transaction
 	def insert_transaction(self, date, category, sub_category, amount, description = None):
 		db_insert_transaction(
-			date = date,
-			account = self.account,
-			category = category,
-			sub_category = sub_category,
-			amount = amount,
-			description = description
+			date = date, account = self.account, category = category,
+			sub_category = sub_category, amount = amount, description = description
 			)
 
-	# Handles all actions pertaining to Removing transaction 
+	# Delete transaction
 	def delete_transaction(self, id):
 		db_delete_transaction(self.account, id)
 
-	# Handles all actions pertaining to Modifying transaction
+	# Update transaction
 	def update_transaction(self, id):
 		db_update_transaction(self.account, id)
 
@@ -182,10 +155,13 @@ class BudgetApp:
 # Test section
 acc1 = BudgetApp('Bank', 'This is a sample bank account')
 BudgetApp.insert_transaction(acc1, date = '2023-01-01', category = 'Income', sub_category = 'Salary', amount = 100) # Test insert function
-BudgetApp.delete_transaction(acc1, id = 2) # Test delete function
+BudgetApp.insert_transaction(acc1, date = '2023-01-30', category = 'Income', sub_category = 'Salary', amount = 30) # Test insert function
+BudgetApp.insert_transaction(acc1, date = '2023-01-01', category = 'Expense', sub_category = 'Food', amount = 50) # Test insert function
+# BudgetApp.delete_transaction(acc1, id = 2) # Test delete function
 # BudgetApp.update_transaction(acc1, 1) # Test update function
-# BudgetApp.insert_transaction(acc1, date = '2023-01-01', category = 'Income', sub_category = 'Bonus', amount = 30)
 
+
+check_balance(acc1)
 
 # c.execute("SELECT * FROM transactions")
 # print(dict(c.fetchone()))
