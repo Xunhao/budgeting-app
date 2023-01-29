@@ -103,11 +103,58 @@ def db_update_transaction(account, transaction_id):
 		else:
 			print(f'ID = {transaction_id} does not exist in the database!')
 
-# def check_balance(account):
-# 	with conn:
-# 		entry = c.execute('SELECT category, SUM(amount) as total FROM transactions GROUP BY 1').fetchall()
-# 		for i in entry:
-# 			print(json.dumps(dict(i), indent = 1))
+def db_check_balance():
+
+	account = input('Specify an Account or hit "Enter" to return all Accounts: ') # Ask user which account he would like to retrieve the balance for
+
+	with conn:
+		if account != '': # return the balance of a specific account
+			row = c.execute('SELECT count(distinct account) as count FROM transactions WHERE lower(account) = :account', {'account': account.lower()}).fetchone()
+
+			# Check if there are any transactions pertaining to the specified Account
+			if dict(row).get('count') == 0:
+				print(f'Account = "{account}" does not exist in the database')
+				return None
+			
+			entries = c.execute(
+				'''
+				SELECT
+				account,
+				category,
+				SUM(iif(category = 'Expense', -amount, amount)) as amount
+
+				FROM transactions 
+
+				WHERE
+				account = :account
+
+				GROUP BY
+				account,
+				category
+
+				ORDER BY category DESC
+				''',
+				{'account': account.capitalize()}
+				).fetchall()
+
+		else: # Return balance of only all accounts
+			entries = c.execute(
+				'''
+				SELECT 
+				account,
+				category,
+				SUM(iif(category = 'Expense', -amount, amount)) as amount
+					
+				FROM transactions
+
+				GROUP BY 1,2
+
+				ORDER BY category DESC
+				'''
+				).fetchall()
+
+		for entry in entries:
+			print(json.dumps(dict(entry), indent = 1))
 
 class BudgetApp:
 
@@ -116,25 +163,17 @@ class BudgetApp:
 	# Initialise Account creation and populate it with basic requirements
 	def __init__(self, account, description):
 		self.account = account  # An account needs to be specified before categories and transactions can be created under it
-		self.ledger = [] # Create an ledger array to store various transactions for a given Account
-		self.income = 50  # Every account starts with 0 income 
-		self.expense = 30  # Every account starts with 0 expense 
-		self.balance = self.income - self.expense  # The total amount of an account is the difference between income and expense
-		self.description = description  # An short description for the Account created
-		self.accounts.append(self.account)
+		# self.ledger = [] # Create an ledger array to store various transactions for a given Account
+		# self.income = 50  # Every account starts with 0 income 
+		# self.expense = 30  # Every account starts with 0 expense 
+		# self.balance = self.income - self.expense  # The total amount of an account is the difference between income and expense
+		# self.description = description  # A short description for the Account created
+		# self.accounts.append(self.account)
 
 	# Check current balance of an Account
-	def check_account_balance(self):
-		pass
-	# 	print(f'Current {self.account} Balance: {self.balance}')
-
-	@classmethod
-	def check_overall_balance(cls):
-		pass
-	# List all Accounts under the Class
-	# @classmethod
-	# def list_accounts(cls):
-	# 	return f'Accounts: {", ".join(cls.accounts)}'
+	@staticmethod
+	def check_balance():
+		db_check_balance()
 
 	# Insert transaction
 	def insert_transaction(self, date, category, sub_category, amount, description = None):
@@ -154,14 +193,17 @@ class BudgetApp:
 
 # Test section
 acc1 = BudgetApp('Bank', 'This is a sample bank account')
+acc2 = BudgetApp('Investment', 'This is a sample bank account')
 BudgetApp.insert_transaction(acc1, date = '2023-01-01', category = 'Income', sub_category = 'Salary', amount = 100) # Test insert function
 BudgetApp.insert_transaction(acc1, date = '2023-01-30', category = 'Income', sub_category = 'Salary', amount = 30) # Test insert function
-BudgetApp.insert_transaction(acc1, date = '2023-01-01', category = 'Expense', sub_category = 'Food', amount = 50) # Test insert function
+BudgetApp.insert_transaction(acc1, date = '2023-01-30', category = 'Expense', sub_category = 'Gas', amount = 10) # Test insert function
+BudgetApp.insert_transaction(acc2, date = '2023-01-01', category = 'Expense', sub_category = 'Food', amount = 50) # Test insert function
+print('===BREAK===\n')
 # BudgetApp.delete_transaction(acc1, id = 2) # Test delete function
 # BudgetApp.update_transaction(acc1, 1) # Test update function
 
 
-check_balance(acc1)
+BudgetApp.check_balance()
 
 # c.execute("SELECT * FROM transactions")
 # print(dict(c.fetchone()))
