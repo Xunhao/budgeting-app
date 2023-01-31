@@ -201,6 +201,11 @@ def db_select_transactions(account):
 		print('Error! No End date provided')
 		return None
 
+	parameter = {
+	'start_date': start_date,
+	'end_date': end_date,
+	'account': account
+	}
 	with conn:
 		entries = c.execute(
 			'''
@@ -212,7 +217,7 @@ def db_select_transactions(account):
 	 		WHERE
 	 		lower(account) = :account and
 	 		(date BETWEEN :start_date AND :end_date)
-	 		''', {'account': account.lower(), 'start_date': start_date, 'end_date': end_date}
+	 		''', parameter
 	 		).fetchall()
 
 		if len(entries) != 0:
@@ -227,52 +232,31 @@ class BudgetApp:
 	# Class Variables here
 
 	# Initialise Account creation and populate it with basic requirements
-	def __init__(self, account, description):
-		self.account = account  # An account needs to be specified before categories and transactions can be created under it
+	def __init__(self, account):
+		self.account = account
 
-	# Check current balances
+	# Check current balance for a given or all accounts
 	@staticmethod
 	def check_balance():
 		db_check_balance()
 
-	# Retrieve transactions for a given account between 2 dates?
+	# Retrieve transactions for a given account
 	def list_transactions(self):
 		db_select_transactions(self.account)
 
-	# Insert transaction
+	# Insert transaction for a given account
 	def insert_transaction(self, date, category, sub_category, amount, description = None):
 		db_insert_transaction(
 			date = date, account = self.account, category = category,
 			sub_category = sub_category, amount = amount, description = description
 			)
 
-	# Delete transaction
+	# Delete transaction for a given account
 	def delete_transaction(self, id):
 		db_delete_transaction(self.account, id)
 
-	# Update transaction
+	# Update transaction for a given account
 	def update_transaction(self, id):
 		db_update_transaction(self.account, id)
-
-
-
-# Test section
-acc1 = BudgetApp('Bank', 'This is a sample bank account')
-acc2 = BudgetApp('Investment', 'This is a sample bank account')
-BudgetApp.insert_transaction(acc1, date = '2023-01-01', category = 'Income', sub_category = 'Salary', amount = 100) # Test insert function
-BudgetApp.insert_transaction(acc1, date = '2023-01-30', category = 'Income', sub_category = 'Salary', amount = 30) # Test insert function
-BudgetApp.insert_transaction(acc1, date = '2023-02-10', category = 'Expense', sub_category = 'Gas', amount = 10) # Test insert function
-BudgetApp.insert_transaction(acc2, date = '2023-02-15', category = 'Expense', sub_category = 'Food', amount = 50) # Test insert function
-print('===BREAK===\n')
-
-BudgetApp.list_transactions(acc2)
-# BudgetApp.delete_transaction(acc1, id = 2) # Test delete function
-# BudgetApp.update_transaction(acc1, 1) # Test update function
-
-
-# BudgetApp.check_balance()
-
-# c.execute("SELECT * FROM transactions")
-# print(dict(c.fetchone()))
 
 conn.close()
