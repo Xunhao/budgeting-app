@@ -21,5 +21,5 @@ I started this project with the intent of learning and familiarising myself with
 1. Does not contain a UI which makes it difficult for user interaction. However, this is by design since this project is meant more for learning
 
 ## Credits
-1. [Corey Schafer](https://www.youtube.com/watch?v=ZDa-Z5JzLYM&list=PL-osiE80TeTsqhIuOqKhwlXsIBIdSeYtc)
-  - I learned most of my OOP concepts from Corey Schafer via his Python OOP Tutorial playlist. He is an amazing teacher and his videos has helped many aspiring developers including myself. I highly recommend watching his videos to learn more about Python where possible.
+1. [Corey Schafer](https://www.youtube.com/@coreyms)
+  - I learned most of my OOP concepts from Corey Schafer via his [Python OOP Tutorial](https://www.youtube.com/watch?v=ZDa-Z5JzLYM&list=PL-osiE80TeTsqhIuOqKhwlXsIBIdSeYtc) playlist. He is an amazing teacher and his videos has helped many aspiring developers including myself. I highly recommend watching his videos to learn more about Python where possible.
