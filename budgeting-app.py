@@ -30,8 +30,12 @@ def db_insert_transaction(date, account, category, sub_category, amount, descrip
 		 }
 
 	with conn:
-		c.execute("""INSERT INTO transactions (date, account, category, sub_category, description, amount) VALUES
-		 (:date, :account, :category, :sub_category, :description, :amount)""", parameter)
+		c.execute(
+			'''
+			INSERT INTO transactions (date, account, category, sub_category, description, amount) VALUES
+			(:date, :account, :category, :sub_category, :description, :amount)
+			''', parameter
+			)
 		row = c.execute('SELECT date, account, category, sub_category, description, amount FROM transactions').fetchone()
 		print(f'The following transaction has been added:')
 		print(json.dumps(dict(row), indent = 1))
@@ -45,7 +49,16 @@ def db_delete_transaction(account, transaction_id):
 	}
 
 	with conn:
-		entry = c.execute('SELECT * FROM transactions WHERE id = :id AND account = :account', parameter).fetchone()
+		entry = c.execute('''
+			SELECT
+			*
+
+			FROM transactions
+
+			WHERE
+			id = :id AND
+			account = :account''', parameter
+			).fetchone()
 		# No need to check for duplicated IDs since it auto increases for each entry
 		if entry is not None:
 			c.execute('DELETE FROM transactions WHERE id = :id AND account = :account', parameter)
@@ -92,24 +105,42 @@ def db_update_transaction(account, transaction_id):
 			'amount': amount
 			}
 
-			c.execute('''UPDATE transactions 
+			c.execute(
+				'''
+				UPDATE transactions 
 				SET date = :date, category = :category, sub_category = :sub_category, description = :description, amount = :amount 
-				WHERE id = :id AND account = :account''',
+				
+				WHERE
+				id = :id AND
+				account = :account
+				''',
 				parameter)
 			entry = c.execute('SELECT * FROM transactions WHERE id = :id', {'id': transaction_id}).fetchone()
+			
 			print(f'ID = {transaction_id} has been updated with the new values')
 			print(json.dumps(dict(entry), indent = 1))
 
 		else:
 			print(f'ID = {transaction_id} does not exist in the database!')
 
+# Check balances of Account(s)
 def db_check_balance():
 
-	account = input('Specify an Account or hit "Enter" to return all Accounts: ') # Ask user which account he would like to retrieve the balance for
+	account = input('Specify an Account or hit "Enter" to return the balances for all accounts: ') # Ask user which account he would like to retrieve the balance for
 
 	with conn:
 		if account != '': # return the balance of a specific account
-			row = c.execute('SELECT count(distinct account) as count FROM transactions WHERE lower(account) = :account', {'account': account.lower()}).fetchone()
+			row = c.execute(
+				'''
+				SELECT
+				count(distinct account) AS count
+
+				FROM transactions
+
+				WHERE
+				lower(account) = :account
+				''', {'account': account.lower()}
+				).fetchone()
 
 			# Check if there are any transactions pertaining to the specified Account
 			if dict(row).get('count') == 0:
@@ -126,7 +157,7 @@ def db_check_balance():
 				FROM transactions 
 
 				WHERE
-				account = :account
+				lower(account) = :account
 
 				GROUP BY
 				account,
@@ -134,7 +165,7 @@ def db_check_balance():
 
 				ORDER BY category DESC
 				''',
-				{'account': account.capitalize()}
+				{'account': account.lower()}
 				).fetchall()
 
 		else: # Return balance of only all accounts
@@ -156,6 +187,41 @@ def db_check_balance():
 		for entry in entries:
 			print(json.dumps(dict(entry), indent = 1))
 
+def db_select_transactions(account):
+
+	start_date = input('Enter Start date: ')
+
+	if start_date == '':
+		print('Error! No Start date provided')
+		return None
+
+	end_date = input('Enter End date: ')
+
+	if end_date == '':
+		print('Error! No End date provided')
+		return None
+
+	with conn:
+		entries = c.execute(
+			'''
+			SELECT
+	 		*
+
+	 		FROM transactions
+
+	 		WHERE
+	 		lower(account) = :account and
+	 		(date BETWEEN :start_date AND :end_date)
+	 		''', {'account': account.lower(), 'start_date': start_date, 'end_date': end_date}
+	 		).fetchall()
+
+		if len(entries) != 0:
+			for entry in entries:
+				print(json.dumps(dict(entry), indent = 1))
+		else:
+			print('No transactions found within the specified dates')
+
+
 class BudgetApp:
 
 	# Class Variables here
@@ -163,17 +229,15 @@ class BudgetApp:
 	# Initialise Account creation and populate it with basic requirements
 	def __init__(self, account, description):
 		self.account = account  # An account needs to be specified before categories and transactions can be created under it
-		# self.ledger = [] # Create an ledger array to store various transactions for a given Account
-		# self.income = 50  # Every account starts with 0 income 
-		# self.expense = 30  # Every account starts with 0 expense 
-		# self.balance = self.income - self.expense  # The total amount of an account is the difference between income and expense
-		# self.description = description  # A short description for the Account created
-		# self.accounts.append(self.account)
 
-	# Check current balance of an Account
+	# Check current balances
 	@staticmethod
 	def check_balance():
 		db_check_balance()
+
+	# Retrieve transactions for a given account between 2 dates?
+	def list_transactions(self):
+		db_select_transactions(self.account)
 
 	# Insert transaction
 	def insert_transaction(self, date, category, sub_category, amount, description = None):
@@ -191,19 +255,22 @@ class BudgetApp:
 		db_update_transaction(self.account, id)
 
 
+
 # Test section
 acc1 = BudgetApp('Bank', 'This is a sample bank account')
 acc2 = BudgetApp('Investment', 'This is a sample bank account')
 BudgetApp.insert_transaction(acc1, date = '2023-01-01', category = 'Income', sub_category = 'Salary', amount = 100) # Test insert function
 BudgetApp.insert_transaction(acc1, date = '2023-01-30', category = 'Income', sub_category = 'Salary', amount = 30) # Test insert function
-BudgetApp.insert_transaction(acc1, date = '2023-01-30', category = 'Expense', sub_category = 'Gas', amount = 10) # Test insert function
-BudgetApp.insert_transaction(acc2, date = '2023-01-01', category = 'Expense', sub_category = 'Food', amount = 50) # Test insert function
+BudgetApp.insert_transaction(acc1, date = '2023-02-10', category = 'Expense', sub_category = 'Gas', amount = 10) # Test insert function
+BudgetApp.insert_transaction(acc2, date = '2023-02-15', category = 'Expense', sub_category = 'Food', amount = 50) # Test insert function
 print('===BREAK===\n')
+
+BudgetApp.list_transactions(acc2)
 # BudgetApp.delete_transaction(acc1, id = 2) # Test delete function
 # BudgetApp.update_transaction(acc1, 1) # Test update function
 
 
-BudgetApp.check_balance()
+# BudgetApp.check_balance()
 
 # c.execute("SELECT * FROM transactions")
 # print(dict(c.fetchone()))
